@@ -47,10 +47,10 @@ export function SoundCardContextMenu({ sound, onShare, onEdit, onDelete, onClose
                             }}
                             className="w-full flex items-center gap-3 px-4 py-3 rounded-lg hover:bg-white/5 transition-colors text-left"
                         >
-                            <span className="material-symbols-outlined text-primary">share</span>
+                            <span className="material-symbols-outlined text-primary">publish</span>
                             <div className="flex-1">
-                                <p className="text-white font-medium text-sm">Share to Community</p>
-                                <p className="text-slate-500 text-xs">Let others use this sound</p>
+                                <p className="text-white font-medium text-sm">Publish to Community</p>
+                                <p className="text-slate-500 text-xs">Share with other users</p>
                             </div>
                         </button>
 
@@ -75,7 +75,7 @@ export function SoundCardContextMenu({ sound, onShare, onEdit, onDelete, onClose
                             <span className="material-symbols-outlined text-red-500">delete</span>
                             <div className="flex-1">
                                 <p className="text-red-500 font-medium text-sm">Delete Sound</p>
-                                <p className="text-slate-500 text-xs">Remove from your board</p>
+                                <p className="text-slate-500 text-xs">Remove permanently</p>
                             </div>
                         </button>
                     </div>
