@@ -162,8 +162,26 @@ function App() {
 
       showToast('Shared successfully! 🎉');
     } catch (err) {
-      console.error('Share error:', err);
-      showToast('Failed to share: ' + err.message, 'error');
+      console.error('=== SHARE ERROR DETAILS ===');
+      console.error('Error object:', err);
+      console.error('Error message:', err.message);
+      console.error('Error code:', err.code);
+      console.error('Error details:', err.details);
+      console.error('Error hint:', err.hint);
+      console.error('===========================');
+
+      let errorMessage = err.message || 'Unknown error';
+
+      // Provide helpful hints based on error
+      if (errorMessage.includes('secret API key')) {
+        errorMessage = 'Storage not configured. Check SUPABASE_FIX.sql';
+      } else if (errorMessage.includes('bucket')) {
+        errorMessage = 'Bucket not public. Run SUPABASE_FIX.sql';
+      } else if (errorMessage.includes('policy')) {
+        errorMessage = 'Missing policies. Run SUPABASE_FIX.sql';
+      }
+
+      showToast('Failed: ' + errorMessage, 'error');
     }
   };
 
