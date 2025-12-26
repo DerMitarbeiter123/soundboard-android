@@ -1,69 +1,22 @@
 import { useState, useRef } from 'react';
 
-// Shared context
-let audioCtx = null;
-const bufferCache = new WeakMap();
-const activeSources = new Set();
-
 export function useAudio() {
-    const [playingId, setPlayingId] = useState(null); // ID of mostly recently triggering sound
-
-    const initContext = () => {
-        if (!audioCtx) {
-            const AudioContext = window.AudioContext || window.webkitAudioContext;
-            audioCtx = new AudioContext();
-        }
-        if (audioCtx.state === 'suspended') {
-            audioCtx.resume();
-        }
-        return audioCtx;
-    };
+    const [playingId, setPlayingId] = useState(null);
+    const activeAudio = useRef(null);
+    const audioCache = useRef(new Map());
 
     const stopAll = () => {
-        activeSources.forEach(source => {
-            try { source.stop(); } catch (e) { }
-        });
-        activeSources.clear();
+        if (activeAudio.current) {
+            activeAudio.current.pause();
+            activeAudio.current.currentTime = 0;
+            activeAudio.current = null;
+        }
         setPlayingId(null);
-    };
-
-    /**
-     * Play a sound blob.
-     * @param {Blob} blob - Audio data
-     * @param {Object} options - { volume: 0-100, loop: boolean, allowOverlap: boolean, soundId: string }
-     */
-    // Polyfill-like helpers
-    const blobToBuffer = (blob) => {
-        return new Promise((resolve, reject) => {
-            if (blob.arrayBuffer) {
-                blob.arrayBuffer().then(resolve).catch(reject);
-            } else {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result);
-                reader.onerror = (e) => reject(e);
-                reader.readAsArrayBuffer(blob);
-            }
-        });
-    };
-
-    const decodeAudio = (ctx, arrayBuffer) => {
-        return new Promise((resolve, reject) => {
-            // Attempt Promise-based syntax first (Modern)
-            const res = ctx.decodeAudioData(arrayBuffer, resolve, (e) => {
-                // Fallback for older implementations if promise doesn't trigger
-                reject(new Error("Decode failed: " + (e.message || "Unknown error")));
-            });
-            // If it returns a promise (Standard), handle it
-            if (res && res.catch) {
-                res.then(resolve).catch(reject);
-            }
-        });
     };
 
     const playBlob = async (blob, options = {}) => {
         if (!blob) throw new Error("No audio data provided");
 
-        // Safety check for blob type
         if (!(blob instanceof Blob)) {
             console.error("Invalid blob:", blob);
             throw new Error("Data is not a valid Audio Blob");
@@ -76,46 +29,51 @@ export function useAudio() {
             soundId = null
         } = options;
 
-        const ctx = initContext();
-
         if (!allowOverlap) {
             stopAll();
         }
 
         try {
-            let buffer = bufferCache.get(blob);
-            if (!buffer) {
-                // Safe conversion
-                const arrayBuffer = await blobToBuffer(blob);
-                // Safe decoding
-                buffer = await decodeAudio(ctx, arrayBuffer);
-                bufferCache.set(blob, buffer);
+            // Create or get cached URL
+            let url = audioCache.current.get(blob);
+            if (!url) {
+                url = URL.createObjectURL(blob);
+                audioCache.current.set(blob, url);
             }
 
-            const source = ctx.createBufferSource();
-            source.buffer = buffer;
-            source.loop = loop;
+            // Create audio element
+            const audio = new Audio(url);
+            audio.volume = volume / 100;
+            audio.loop = loop;
 
-            const gainNode = ctx.createGain();
-            gainNode.gain.value = volume / 100;
-
-            source.connect(gainNode);
-            gainNode.connect(ctx.destination);
-
-            source.onended = () => {
-                activeSources.delete(source);
-                if (activeSources.size === 0) setPlayingId(null);
+            // Set up event handlers
+            audio.onended = () => {
+                if (activeAudio.current === audio) {
+                    activeAudio.current = null;
+                    setPlayingId(null);
+                }
             };
 
-            source.start(0);
-            activeSources.add(source);
+            audio.onerror = (e) => {
+                console.error("Audio playback error:", e);
+                throw new Error("Failed to play audio file");
+            };
+
+            // Play
+            await audio.play();
+            activeAudio.current = audio;
             if (soundId) setPlayingId(soundId);
 
-            return source;
+            return audio;
         } catch (err) {
-            console.error("Playback failed logic:", err);
+            console.error("Playback failed:", err);
             throw err;
         }
+    };
+
+    const initContext = () => {
+        // Not needed for HTML5 Audio approach
+        return null;
     };
 
     return { playBlob, stopAll, playingId, initContext };

@@ -98,6 +98,10 @@ export function useSoundStore() {
     setSettings(prev => ({ ...prev, [key]: value }));
   };
 
+  const getAudioBlob = async (audioKey) => {
+    return await get(audioKey);
+  };
+
   return {
     sounds,
     settings,
@@ -106,6 +110,7 @@ export function useSoundStore() {
     updateSound,
     deleteSound,
     toggleFavorite,
-    updateSettings
+    updateSettings,
+    getAudioBlob
   };
 }
