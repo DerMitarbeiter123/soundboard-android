@@ -6,14 +6,16 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'prompt',
+      registerType: 'autoUpdate',
       devOptions: {
         enabled: true
       },
       workbox: {
         cleanupOutdatedCaches: true,
-        skipWaiting: false,
-        clientsClaim: false,
+        skipWaiting: true,
+        clientsClaim: true,
+        // Force update by adding version to cache name
+        cacheId: 'sonicgrid-v1.0.4',
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -40,6 +42,8 @@ export default defineConfig({
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
+        // Add version to force manifest update
+        version: '1.0.4',
         icons: [
           {
             src: '/pwa-192x192.png',
