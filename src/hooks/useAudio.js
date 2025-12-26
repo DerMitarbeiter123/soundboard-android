@@ -14,6 +14,16 @@ export function useAudio() {
         setPlayingId(null);
     };
 
+    // Convert blob to base64 data URL for PWA compatibility
+    const blobToDataURL = (blob) => {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsDataURL(blob);
+        });
+    };
+
     const playBlob = async (blob, options = {}) => {
         if (!blob) throw new Error("No audio data provided");
 
@@ -34,19 +44,19 @@ export function useAudio() {
         }
 
         try {
-            // Create or get cached URL
-            let url = audioCache.current.get(blob);
-            if (!url) {
-                url = URL.createObjectURL(blob);
-                audioCache.current.set(blob, url);
+            // Create or get cached data URL
+            let dataUrl = audioCache.current.get(blob);
+            if (!dataUrl) {
+                dataUrl = await blobToDataURL(blob);
+                audioCache.current.set(blob, dataUrl);
             }
 
             // Create audio element
-            const audio = new Audio(url);
+            const audio = new Audio();
             audio.volume = volume / 100;
             audio.loop = loop;
 
-            // Set up event handlers
+            // Set up event handlers BEFORE setting src
             audio.onended = () => {
                 if (activeAudio.current === audio) {
                     activeAudio.current = null;
@@ -55,12 +65,17 @@ export function useAudio() {
             };
 
             audio.onerror = (e) => {
-                console.error("Audio playback error:", e);
-                throw new Error("Failed to play audio file");
+                console.error("Audio playback error:", e, audio.error);
+                const errorMsg = audio.error ?
+                    `Audio error: ${audio.error.code} - ${audio.error.message}` :
+                    "Failed to play audio file";
+                throw new Error(errorMsg);
             };
 
-            // Play
+            // Set source and play
+            audio.src = dataUrl;
             await audio.play();
+
             activeAudio.current = audio;
             if (soundId) setPlayingId(soundId);
 

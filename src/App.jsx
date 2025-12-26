@@ -74,7 +74,9 @@ function App() {
       }
     } catch (e) {
       console.error("Failed to play sound", e);
-      showToast(`Playback Error: ${e.message}`, "error");
+      // Show detailed error for debugging
+      const errorMsg = e.message || "Unknown error";
+      showToast(`Error: ${errorMsg}`, "error");
     }
   };
 
