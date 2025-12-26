@@ -92,11 +92,18 @@ CREATE POLICY "Anyone can update download count"
 
 ## 5. Create Storage Bucket
 
+**CRITICAL STEPS - Follow carefully:**
+
 1. Go to **Storage** in Supabase dashboard
 2. Click "Create a new bucket"
 3. Name it: `shared-sounds`
-4. Make it **Public**
+4. **IMPORTANT**: Toggle **"Public bucket"** to ON (this is crucial!)
 5. Click "Create bucket"
+
+**Verify the bucket is public:**
+- Click on the `shared-sounds` bucket
+- Look for a "Public" badge or label
+- If it says "Private", click the settings icon and toggle "Public bucket" to ON
 
 ### Set Storage Policies:
 
