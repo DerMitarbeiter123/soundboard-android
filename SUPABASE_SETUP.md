@@ -13,9 +13,14 @@
 ## 2. Get API Keys
 
 1. In your project dashboard, go to **Settings** → **API**
-2. Copy these values:
+2. You'll see the new API key system. Copy these values:
    - **Project URL** (looks like `https://xxxxx.supabase.co`)
-   - **anon public** key (long string starting with `eyJ...`)
+   - **Publishable key** (under "New publishable key" section)
+     - It starts with `sb_publishable_...`
+     - This is the new version of the old "anon" key
+     - ✅ Safe to use in browsers with RLS enabled
+
+**Important**: Do NOT use the "Secret key" - that's only for servers!
 
 ## 3. Configure Environment Variables
 
@@ -24,7 +29,7 @@
 2. Add:
 ```
 VITE_SUPABASE_URL=https://your-project.supabase.co
-VITE_SUPABASE_ANON_KEY=your_anon_key_here
+VITE_SUPABASE_ANON_KEY=sb_publishable_YOUR_KEY_HERE
 ```
 
 ### For Railway Deployment:
@@ -32,7 +37,7 @@ VITE_SUPABASE_ANON_KEY=your_anon_key_here
 2. Click on **Variables**
 3. Add these two variables:
    - `VITE_SUPABASE_URL` = your project URL
-   - `VITE_SUPABASE_ANON_KEY` = your anon key
+   - `VITE_SUPABASE_ANON_KEY` = your publishable key (starts with `sb_publishable_`)
 
 ## 4. Create Database Tables
 

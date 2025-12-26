@@ -57,13 +57,17 @@ Make sure your Railway deployment has the correct keys:
 
 ## Step 5: Check the Key Type
 
+**IMPORTANT: Supabase has new API keys!**
+
 1. In Supabase, go to **Settings** → **API**
-2. You should see two keys:
-   - ✅ **anon public** - This is what you should use
-   - ❌ **service_role** - DO NOT use this in the browser
-3. Copy the **anon public** key
+2. You should see the **new API key system**:
+   - ✅ **Publishable key** (starts with `sb_publishable_...`) - Use this one!
+   - ❌ **Secret key** - DO NOT use this in the browser
+3. Copy the **Publishable key** (the one that starts with `sb_publishable_`)
 4. Update your Railway environment variable `VITE_SUPABASE_ANON_KEY` with this key
 5. Redeploy your app
+
+**Note**: If you see "Legacy anon, service_role API keys", you can still use those, but the new publishable keys are recommended.
 
 ## Step 6: Test
 
