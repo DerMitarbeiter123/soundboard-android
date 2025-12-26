@@ -294,9 +294,12 @@ function App() {
         >
           <span className="material-symbols-outlined">person</span>
         </button>
-        <h2 className="text-white text-lg font-bold leading-tight tracking-tight">
-          {user?.username || 'SonicGrid'}
-        </h2>
+        <div className="text-center">
+          <h2 className="text-white text-lg font-bold leading-tight tracking-tight">
+            {user?.username || 'SonicGrid'}
+          </h2>
+          <p className="text-xs text-slate-500">v1.0.4</p>
+        </div>
         <button
           onClick={() => setCurrentView('community')}
           className="flex size-10 items-center justify-center rounded-full text-white hover:bg-white/10 transition-colors active:scale-95 touch-manipulation"
