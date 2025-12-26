@@ -100,20 +100,46 @@ CREATE POLICY "Anyone can update download count"
 
 ### Set Storage Policies:
 
-Go to the bucket → Policies → New Policy:
+**IMPORTANT**: You need to set these policies in the Supabase dashboard:
 
-**Policy 1: Public Read**
+1. Go to **Storage** → Click on `shared-sounds` bucket
+2. Click on **Policies** tab
+3. Click **New Policy** → **For full customization**
+
+**Policy 1: Allow public uploads**
+- Policy name: `Allow public uploads`
+- Allowed operation: `INSERT`
+- Target roles: `public`
+- Policy definition:
 ```sql
-CREATE POLICY "Public read access"
-ON storage.objects FOR SELECT
-USING (bucket_id = 'shared-sounds');
+bucket_id = 'shared-sounds'
 ```
 
-**Policy 2: Public Upload**
+**Policy 2: Allow public reads**
+- Policy name: `Allow public reads`  
+- Allowed operation: `SELECT`
+- Target roles: `public`
+- Policy definition:
 ```sql
-CREATE POLICY "Public upload access"
+bucket_id = 'shared-sounds'
+```
+
+**Alternative: Use SQL Editor**
+
+If the UI doesn't work, run this in SQL Editor:
+
+```sql
+-- Allow anyone to upload files
+CREATE POLICY "Allow public uploads"
 ON storage.objects FOR INSERT
+TO public
 WITH CHECK (bucket_id = 'shared-sounds');
+
+-- Allow anyone to read files
+CREATE POLICY "Allow public reads"
+ON storage.objects FOR SELECT
+TO public
+USING (bucket_id = 'shared-sounds');
 ```
 
 ## 6. Test the Setup

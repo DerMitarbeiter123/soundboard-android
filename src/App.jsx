@@ -3,6 +3,7 @@ import { useSoundStore } from './hooks/useSoundStore';
 import { useAudio } from './hooks/useAudio';
 import { useUser } from './hooks/useUser';
 import { useServiceWorker } from './hooks/useServiceWorker';
+import { supabase } from './lib/supabase';
 import { SoundCard } from './components/SoundCard';
 import { AddSoundModal } from './components/AddSoundModal';
 import { SettingsScreen } from './components/SettingsScreen';
@@ -124,6 +125,53 @@ function App() {
       .catch(() => showToast("Failed to save", "error"));
   };
 
+  const handleShareSound = async (sound) => {
+    if (!user) {
+      showToast('Please wait for profile to load', 'error');
+      return;
+    }
+
+    try {
+      const blob = await getAudioBlob(sound.audioKey);
+      if (!blob) throw new Error('Audio file not found');
+
+      showToast('Uploading...', 'info');
+
+      const fileName = `${user.id}/${Date.now()}_${sound.name.replace(/[^a-zA-Z0-9]/g, '_')}.webm`;
+      const { error: uploadError } = await supabase.storage
+        .from('shared-sounds')
+        .upload(fileName, blob, {
+          contentType: blob.type,
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { error: dbError } = await supabase
+        .from('shared_sounds')
+        .insert([{
+          user_id: user.id,
+          name: sound.name,
+          icon: sound.icon,
+          color: sound.color,
+          duration: sound.duration,
+          file_path: fileName
+        }]);
+
+      if (dbError) throw dbError;
+
+      showToast('Shared successfully! 🎉');
+    } catch (err) {
+      console.error('Share error:', err);
+      showToast('Failed to share: ' + err.message, 'error');
+    }
+  };
+
+  const handleEditSound = (sound) => {
+    // TODO: Open edit modal
+    showToast('Edit feature coming soon!', 'info');
+  };
+
   const favorites = sounds.filter(s => s.isFavorite);
 
   const renderContent = () => {
@@ -157,6 +205,8 @@ function App() {
                   isEditing={isEditing}
                   onClick={() => handlePlaySound(sound)}
                   onDelete={deleteSound}
+                  onShare={handleShareSound}
+                  onEdit={handleEditSound}
                 />
               ))}
             </div>
@@ -177,6 +227,8 @@ function App() {
               isEditing={isEditing}
               onClick={() => handlePlaySound(sound)}
               onDelete={deleteSound}
+              onShare={handleShareSound}
+              onEdit={handleEditSound}
             />
           ))}
 
