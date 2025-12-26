@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useSoundStore } from './hooks/useSoundStore';
 import { useAudio } from './hooks/useAudio';
 import { useUser } from './hooks/useUser';
+import { useServiceWorker } from './hooks/useServiceWorker';
 import { SoundCard } from './components/SoundCard';
 import { AddSoundModal } from './components/AddSoundModal';
 import { SettingsScreen } from './components/SettingsScreen';
@@ -34,7 +35,40 @@ function Toast({ message, type = 'info', onClose }) {
   );
 }
 
+function UpdatePrompt({ onUpdate, onClose }) {
+  return (
+    <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/60 backdrop-blur-sm p-4 animate-fade-in">
+      <div className="w-full max-w-sm bg-surface-dark rounded-xl shadow-2xl border border-primary/50 overflow-hidden">
+        <div className="p-6 text-center">
+          <div className="size-16 rounded-full bg-primary/20 flex items-center justify-center mx-auto mb-4">
+            <span className="material-symbols-outlined text-4xl text-primary">update</span>
+          </div>
+          <h3 className="text-white text-lg font-bold mb-2">Update Available!</h3>
+          <p className="text-slate-400 text-sm mb-6">
+            A new version of SonicGrid is ready. Update now to get the latest features and fixes.
+          </p>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="flex-1 py-3 rounded-lg bg-slate-800 text-white font-medium hover:bg-slate-700 transition-colors"
+            >
+              Later
+            </button>
+            <button
+              onClick={onUpdate}
+              className="flex-1 py-3 rounded-lg bg-primary text-white font-bold hover:bg-primary/90 transition-colors shadow-lg shadow-primary/30"
+            >
+              Update Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function App() {
+  const { needRefresh, updateApp, closePrompt } = useServiceWorker();
   const { user, loading: userLoading } = useUser();
   const { sounds, settings, addSound, deleteSound, getAudioBlob } = useSoundStore();
   const { playBlob, stopAll, playingId, initContext } = useAudio();
@@ -167,6 +201,9 @@ function App() {
   return (
     // Fixed: Mobile Fullscreen vs Desktop Frame
     <div className="relative flex flex-col h-[100dvh] w-full sm:max-w-md bg-background-light dark:bg-background-dark overflow-hidden shadow-2xl font-display sm:mx-auto sm:my-8 sm:h-[844px] sm:rounded-3xl sm:border-slate-800 sm:border sm:ring-8 sm:ring-slate-900">
+
+      {/* Update Prompt */}
+      {needRefresh && <UpdatePrompt onUpdate={updateApp} onClose={closePrompt} />}
 
       {toast && <Toast message={toast.message} type={toast.type} onClose={() => setToast(null)} />}
 

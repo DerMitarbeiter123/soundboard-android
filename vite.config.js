@@ -6,16 +6,37 @@ export default defineConfig({
   plugins: [
     react(),
     VitePWA({
-      registerType: 'autoUpdate',
+      registerType: 'prompt',
       devOptions: {
         enabled: true
+      },
+      workbox: {
+        cleanupOutdatedCaches: true,
+        skipWaiting: false,
+        clientsClaim: false,
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'google-fonts-cache',
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 60 * 60 * 24 * 365 // 1 year
+              },
+              cacheableResponse: {
+                statuses: [0, 200]
+              }
+            }
+          }
+        ]
       },
       manifest: {
         name: 'SonicGrid Soundboard',
         short_name: 'SonicGrid',
         description: 'Your scalable, cyberpunk soundboard.',
-        theme_color: '#0a0a12',
-        background_color: '#0a0a12',
+        theme_color: '#101922',
+        background_color: '#101922',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
