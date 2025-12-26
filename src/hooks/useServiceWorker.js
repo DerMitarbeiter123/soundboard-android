@@ -10,28 +10,55 @@ export function useServiceWorker() {
         updateServiceWorker,
     } = useRegisterSW({
         onRegistered(r) {
-            console.log('SW Registered:', r);
-            // Check for updates every 60 seconds
-            r && setInterval(() => {
-                r.update();
-            }, 60000);
+            console.log('✅ Service Worker registered successfully');
+            if (r) {
+                console.log('🔄 Setting up automatic update checks every 30 seconds');
+
+                // Check for updates immediately
+                r.update().then(() => {
+                    console.log('✓ Initial update check complete');
+                });
+
+                // Then check every 30 seconds
+                const interval = setInterval(() => {
+                    console.log('🔍 Checking for updates...');
+                    r.update().then(() => {
+                        console.log('✓ Update check complete');
+                    }).catch((err) => {
+                        console.error('❌ Update check failed:', err);
+                    });
+                }, 30000); // 30 seconds
+
+                // Cleanup interval on unmount
+                return () => clearInterval(interval);
+            }
         },
         onRegisterError(error) {
-            console.log('SW registration error', error);
+            console.error('❌ Service Worker registration error:', error);
+        },
+        onNeedRefresh() {
+            console.log('🆕 New version available!');
+            setNeedRefresh(true);
+        },
+        onOfflineReady() {
+            console.log('📱 App ready to work offline');
         },
     });
 
     useEffect(() => {
         if (needRefreshSW) {
+            console.log('🔔 Update prompt triggered');
             setNeedRefresh(true);
         }
     }, [needRefreshSW]);
 
     const updateApp = () => {
+        console.log('⬆️ Updating app...');
         updateServiceWorker(true);
     };
 
     const closePrompt = () => {
+        console.log('⏭️ Update dismissed');
         setNeedRefresh(false);
         setNeedRefreshSW(false);
     };

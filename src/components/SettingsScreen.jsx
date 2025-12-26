@@ -116,13 +116,26 @@ export function SettingsScreen({ onBack }) {
 
                 {/* General */}
                 <Section title="General">
+                    <button
+                        onClick={() => {
+                            console.log('🔄 Manual update check triggered');
+                            window.location.reload(true);
+                        }}
+                        className="flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer active:bg-white/5 w-full text-left"
+                    >
+                        <div>
+                            <span className="text-white text-sm font-medium">Check for Updates</span>
+                            <p className="text-slate-500 text-xs mt-0.5">Force reload to get latest version</p>
+                        </div>
+                        <span className="material-symbols-outlined text-primary text-lg">refresh</span>
+                    </button>
                     <div className="flex items-center justify-between p-4 border-b border-slate-800 cursor-pointer active:bg-white/5">
                         <span className="text-primary text-sm font-medium">Export Soundboard</span>
                         <span className="material-symbols-outlined text-slate-500 text-lg">ios_share</span>
                     </div>
                     <div className="flex items-center justify-between p-4 cursor-pointer active:bg-white/5">
                         <span className="text-white text-sm font-medium">Version</span>
-                        <span className="text-slate-500 text-sm">1.0.2</span>
+                        <span className="text-slate-500 text-sm">1.0.3</span>
                     </div>
                 </Section>
 
