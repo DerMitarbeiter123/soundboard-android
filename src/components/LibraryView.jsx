@@ -58,6 +58,15 @@ export function LibraryView({ onPlay }) {
         }
     };
 
+    const handleDelete = async (id) => {
+        try {
+            await deleteSound(id);
+        } catch (err) {
+            console.error('Delete error:', err);
+            alert('Failed to delete sound');
+        }
+    };
+
     return (
         <div className="flex flex-col h-full bg-background-dark">
             {/* Search within Library */}
@@ -118,7 +127,7 @@ export function LibraryView({ onPlay }) {
                                         <span className={clsx("material-symbols-outlined text-xl", sound.isFavorite && "filled")}>favorite</span>
                                     </button>
                                     <button
-                                        onClick={() => deleteSound(sound.id)}
+                                        onClick={() => handleDelete(sound.id)}
                                         className="size-8 rounded-full flex items-center justify-center text-slate-600 hover:text-red-500 transition-colors"
                                     >
                                         <span className="material-symbols-outlined text-xl">delete</span>

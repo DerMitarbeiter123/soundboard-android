@@ -172,6 +172,16 @@ function App() {
     showToast('Edit feature coming soon!', 'info');
   };
 
+  const handleDeleteSound = async (id) => {
+    try {
+      await deleteSound(id);
+      showToast('Sound deleted', 'info');
+    } catch (err) {
+      console.error('Delete error:', err);
+      showToast('Failed to delete', 'error');
+    }
+  };
+
   const favorites = sounds.filter(s => s.isFavorite);
 
   const renderContent = () => {
@@ -204,7 +214,7 @@ function App() {
                   isPlaying={playingId === sound.id}
                   isEditing={isEditing}
                   onClick={() => handlePlaySound(sound)}
-                  onDelete={deleteSound}
+                  onDelete={handleDeleteSound}
                   onShare={handleShareSound}
                   onEdit={handleEditSound}
                 />
@@ -226,7 +236,7 @@ function App() {
               isPlaying={playingId === sound.id}
               isEditing={isEditing}
               onClick={() => handlePlaySound(sound)}
-              onDelete={deleteSound}
+              onDelete={handleDeleteSound}
               onShare={handleShareSound}
               onEdit={handleEditSound}
             />
