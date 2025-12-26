@@ -35,12 +35,18 @@ export function AddSoundModal({ onClose, onSave }) {
     const startRecording = async () => {
         try {
             const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            mediaRecorder.current = new MediaRecorder(stream);
+            const mimeType = MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
+                ? 'audio/webm;codecs=opus'
+                : 'audio/webm';
+
+            mediaRecorder.current = new MediaRecorder(stream, { mimeType });
             chunks.current = [];
 
-            mediaRecorder.current.ondataavailable = (e) => chunks.current.push(e.data);
+            mediaRecorder.current.ondataavailable = (e) => {
+                if (e.data.size > 0) chunks.current.push(e.data);
+            };
             mediaRecorder.current.onstop = () => {
-                const blob = new Blob(chunks.current, { type: 'audio/webm' });
+                const blob = new Blob(chunks.current, { type: mimeType });
                 setAudioBlob(blob);
                 stream.getTracks().forEach(t => t.stop());
             };

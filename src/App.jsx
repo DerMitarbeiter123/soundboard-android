@@ -63,7 +63,7 @@ function App() {
     try {
       const blob = await getAudioBlob(sound.audioKey);
       if (blob) {
-        playBlob(blob, {
+        await playBlob(blob, {
           volume: settings.masterVolume,
           loop: settings.loopDefault,
           allowOverlap: settings.allowOverlap,
@@ -74,7 +74,7 @@ function App() {
       }
     } catch (e) {
       console.error("Failed to play sound", e);
-      showToast("Playback failed", "error");
+      showToast(`Playback Error: ${e.message}`, "error");
     }
   };
 

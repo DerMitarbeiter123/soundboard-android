@@ -79,6 +79,7 @@ export function useAudio() {
             return source;
         } catch (err) {
             console.error("Playback failed:", err);
+            throw err; // Re-throw so caller knows
         }
     };
 
