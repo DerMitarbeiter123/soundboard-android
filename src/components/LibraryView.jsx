@@ -1,12 +1,62 @@
 import { useState } from 'react';
 import { useSoundStore } from '../hooks/useSoundStore';
+import { useUser } from '../hooks/useUser';
+import { supabase } from '../lib/supabase';
 import clsx from 'clsx';
 
 export function LibraryView({ onPlay }) {
-    const { sounds, toggleFavorite, deleteSound } = useSoundStore();
+    const { user } = useUser();
+    const { sounds, toggleFavorite, deleteSound, getAudioBlob } = useSoundStore();
     const [filter, setFilter] = useState('');
+    const [sharing, setSharing] = useState(null);
 
     const filteredSounds = sounds.filter(s => s.name.toLowerCase().includes(filter.toLowerCase()));
+
+    const handleShare = async (sound) => {
+        if (!user) {
+            alert('Please wait for profile to load');
+            return;
+        }
+
+        setSharing(sound.id);
+        try {
+            // Get the audio blob
+            const blob = await getAudioBlob(sound.audioKey);
+            if (!blob) throw new Error('Audio file not found');
+
+            // Upload to Supabase Storage
+            const fileName = `${user.id}/${Date.now()}_${sound.name.replace(/[^a-zA-Z0-9]/g, '_')}.webm`;
+            const { data: uploadData, error: uploadError } = await supabase.storage
+                .from('shared-sounds')
+                .upload(fileName, blob, {
+                    contentType: blob.type,
+                    upsert: false
+                });
+
+            if (uploadError) throw uploadError;
+
+            // Create database entry
+            const { error: dbError } = await supabase
+                .from('shared_sounds')
+                .insert([{
+                    user_id: user.id,
+                    name: sound.name,
+                    icon: sound.icon,
+                    color: sound.color,
+                    duration: sound.duration,
+                    file_path: fileName
+                }]);
+
+            if (dbError) throw dbError;
+
+            alert('Sound shared successfully! 🎉');
+        } catch (err) {
+            console.error('Share error:', err);
+            alert('Failed to share: ' + err.message);
+        } finally {
+            setSharing(null);
+        }
+    };
 
     return (
         <div className="flex flex-col h-full bg-background-dark">
@@ -49,6 +99,18 @@ export function LibraryView({ onPlay }) {
                                 </div>
 
                                 <div className="flex items-center gap-1">
+                                    <button
+                                        onClick={() => handleShare(sound)}
+                                        disabled={sharing === sound.id}
+                                        className={clsx(
+                                            "size-8 rounded-full flex items-center justify-center transition-colors",
+                                            sharing === sound.id ? "text-slate-700" : "text-slate-600 hover:text-primary"
+                                        )}
+                                    >
+                                        <span className="material-symbols-outlined text-xl">
+                                            {sharing === sound.id ? 'hourglass_empty' : 'share'}
+                                        </span>
+                                    </button>
                                     <button
                                         onClick={() => toggleFavorite(sound.id)}
                                         className={clsx("size-8 rounded-full flex items-center justify-center transition-colors", sound.isFavorite ? "text-red-500" : "text-slate-600 hover:text-white")}

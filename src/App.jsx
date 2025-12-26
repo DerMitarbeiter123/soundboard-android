@@ -1,10 +1,13 @@
 import { useState, useEffect } from 'react';
 import { useSoundStore } from './hooks/useSoundStore';
 import { useAudio } from './hooks/useAudio';
+import { useUser } from './hooks/useUser';
 import { SoundCard } from './components/SoundCard';
 import { AddSoundModal } from './components/AddSoundModal';
 import { SettingsScreen } from './components/SettingsScreen';
 import { LibraryView } from './components/LibraryView';
+import { ProfileScreen } from './components/ProfileScreen';
+import { CommunityLibrary } from './components/CommunityLibrary';
 import { MiniPlayer } from './components/MiniPlayer';
 import clsx from 'clsx';
 import './components/Animations.css';
@@ -32,10 +35,11 @@ function Toast({ message, type = 'info', onClose }) {
 }
 
 function App() {
+  const { user, loading: userLoading } = useUser();
   const { sounds, settings, addSound, deleteSound, getAudioBlob } = useSoundStore();
   const { playBlob, stopAll, playingId, initContext } = useAudio();
 
-  const [currentView, setCurrentView] = useState('board'); // 'board' | 'settings' | 'library'
+  const [currentView, setCurrentView] = useState('board'); // 'board' | 'settings' | 'library' | 'community' | 'profile'
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [toast, setToast] = useState(null);
@@ -94,6 +98,12 @@ function App() {
     }
     if (currentView === 'library') {
       return <LibraryView onPlay={handlePlaySound} />;
+    }
+    if (currentView === 'profile') {
+      return <ProfileScreen onBack={() => setCurrentView('board')} />;
+    }
+    if (currentView === 'community') {
+      return <CommunityLibrary onBack={() => setCurrentView('board')} />;
     }
 
     return (
@@ -162,17 +172,19 @@ function App() {
 
       <header className="flex items-center justify-between bg-background-dark p-4 pt-[max(1rem,env(safe-area-inset-top))] z-20 shrink-0 border-b border-white/5">
         <button
-          onClick={() => setIsEditing(!isEditing)}
-          className={clsx("flex size-10 items-center justify-center rounded-full transition-colors active:scale-95 touch-manipulation", isEditing ? "bg-primary text-white" : "text-white hover:bg-white/10")}
-        >
-          <span className="material-symbols-outlined">{isEditing ? 'check' : 'edit'}</span>
-        </button>
-        <h2 className="text-white text-lg font-bold leading-tight tracking-tight">SonicGrid</h2>
-        <button
-          onClick={() => setCurrentView('library')}
+          onClick={() => setCurrentView('profile')}
           className="flex size-10 items-center justify-center rounded-full text-white hover:bg-white/10 transition-colors active:scale-95 touch-manipulation"
         >
-          <span className="material-symbols-outlined">search</span>
+          <span className="material-symbols-outlined">person</span>
+        </button>
+        <h2 className="text-white text-lg font-bold leading-tight tracking-tight">
+          {user?.username || 'SonicGrid'}
+        </h2>
+        <button
+          onClick={() => setCurrentView('community')}
+          className="flex size-10 items-center justify-center rounded-full text-white hover:bg-white/10 transition-colors active:scale-95 touch-manipulation"
+        >
+          <span className="material-symbols-outlined">public</span>
         </button>
       </header>
 
@@ -194,13 +206,21 @@ function App() {
       <div className="absolute bottom-0 w-full z-40 flex flex-col bg-background-dark pb-[env(safe-area-inset-bottom)]">
         <MiniPlayer playingId={playingId} onStop={stopAll} />
 
-        <nav className="flex justify-between items-center px-6 pb-6 pt-2 bg-background-dark border-t border-transparent">
+        <nav className="flex justify-between items-center px-4 pb-6 pt-2 bg-background-dark border-t border-transparent">
           <button
             onClick={() => setCurrentView('board')}
             className={clsx("flex flex-1 flex-col items-center justify-end gap-1 transition-colors active:scale-95 touch-manipulation", currentView === 'board' ? "text-primary" : "text-[#9dabb9] hover:text-white")}
           >
             <span className={clsx("material-symbols-outlined text-2xl", currentView === 'board' && "filled")}>grid_view</span>
             <p className="text-[10px] font-bold leading-normal tracking-[0.015em]">Board</p>
+          </button>
+
+          <button
+            onClick={() => setCurrentView('community')}
+            className={clsx("flex flex-1 flex-col items-center justify-end gap-1 transition-colors active:scale-95 touch-manipulation", currentView === 'community' ? "text-primary" : "text-[#9dabb9] hover:text-white")}
+          >
+            <span className={clsx("material-symbols-outlined text-2xl", currentView === 'community' && "filled")}>public</span>
+            <p className="text-[10px] font-medium leading-normal tracking-[0.015em]">Community</p>
           </button>
 
           <button
