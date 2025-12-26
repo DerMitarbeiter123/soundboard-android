@@ -32,9 +32,42 @@ export function useAudio() {
      * @param {Blob} blob - Audio data
      * @param {Object} options - { volume: 0-100, loop: boolean, allowOverlap: boolean, soundId: string }
      */
+    // Polyfill-like helpers
+    const blobToBuffer = (blob) => {
+        return new Promise((resolve, reject) => {
+            if (blob.arrayBuffer) {
+                blob.arrayBuffer().then(resolve).catch(reject);
+            } else {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = (e) => reject(e);
+                reader.readAsArrayBuffer(blob);
+            }
+        });
+    };
+
+    const decodeAudio = (ctx, arrayBuffer) => {
+        return new Promise((resolve, reject) => {
+            // Attempt Promise-based syntax first (Modern)
+            const res = ctx.decodeAudioData(arrayBuffer, resolve, (e) => {
+                // Fallback for older implementations if promise doesn't trigger
+                reject(new Error("Decode failed: " + (e.message || "Unknown error")));
+            });
+            // If it returns a promise (Standard), handle it
+            if (res && res.catch) {
+                res.then(resolve).catch(reject);
+            }
+        });
+    };
+
     const playBlob = async (blob, options = {}) => {
-        if (!blob) return;
-        const ctx = initContext();
+        if (!blob) throw new Error("No audio data provided");
+
+        // Safety check for blob type
+        if (!(blob instanceof Blob)) {
+            console.error("Invalid blob:", blob);
+            throw new Error("Data is not a valid Audio Blob");
+        }
 
         const {
             volume = 100,
@@ -43,7 +76,8 @@ export function useAudio() {
             soundId = null
         } = options;
 
-        // Handle Overlap Logic
+        const ctx = initContext();
+
         if (!allowOverlap) {
             stopAll();
         }
@@ -51,8 +85,10 @@ export function useAudio() {
         try {
             let buffer = bufferCache.get(blob);
             if (!buffer) {
-                const arrayBuffer = await blob.arrayBuffer();
-                buffer = await ctx.decodeAudioData(arrayBuffer);
+                // Safe conversion
+                const arrayBuffer = await blobToBuffer(blob);
+                // Safe decoding
+                buffer = await decodeAudio(ctx, arrayBuffer);
                 bufferCache.set(blob, buffer);
             }
 
@@ -60,7 +96,6 @@ export function useAudio() {
             source.buffer = buffer;
             source.loop = loop;
 
-            // Volume Control
             const gainNode = ctx.createGain();
             gainNode.gain.value = volume / 100;
 
@@ -78,8 +113,8 @@ export function useAudio() {
 
             return source;
         } catch (err) {
-            console.error("Playback failed:", err);
-            throw err; // Re-throw so caller knows
+            console.error("Playback failed logic:", err);
+            throw err;
         }
     };
 
