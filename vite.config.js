@@ -12,6 +12,10 @@ export default defineConfig({
     host: '0.0.0.0',
     port: process.env.PORT || 4173,
     strictPort: false,
+    allowedHosts: [
+      'soundboard.up.railway.app',
+      '.railway.app'
+    ]
   },
   plugins: [
     react(),
