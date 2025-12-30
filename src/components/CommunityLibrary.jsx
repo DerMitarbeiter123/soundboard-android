@@ -1,7 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { supabase } from '../lib/supabase';
 import { useUser } from '../hooks/useUser';
 import { useSoundStore } from '../hooks/useSoundStore';
+import { ConfirmDialog } from './ConfirmDialog';
 import clsx from 'clsx';
 
 export function CommunityLibrary({ onBack }) {
@@ -11,11 +12,23 @@ export function CommunityLibrary({ onBack }) {
     const [loading, setLoading] = useState(true);
     const [sortBy, setSortBy] = useState('popular'); // 'popular' | 'newest'
     const [searchQuery, setSearchQuery] = useState('');
-    const [uploading, setUploading] = useState(false);
+    const [playingId, setPlayingId] = useState(null);
+    const [deleteConfirm, setDeleteConfirm] = useState(null);
+    const audioRef = useRef(null);
 
     useEffect(() => {
         loadSounds();
     }, [sortBy]);
+
+    // Cleanup audio on unmount
+    useEffect(() => {
+        return () => {
+            if (audioRef.current) {
+                audioRef.current.pause();
+                audioRef.current = null;
+            }
+        };
+    }, []);
 
     const loadSounds = async () => {
         setLoading(true);
@@ -43,6 +56,49 @@ export function CommunityLibrary({ onBack }) {
             setSounds([]);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const handlePreview = async (sound) => {
+        // Stop currently playing audio
+        if (audioRef.current) {
+            audioRef.current.pause();
+            audioRef.current = null;
+        }
+
+        // If clicking the same sound, just stop
+        if (playingId === sound.id) {
+            setPlayingId(null);
+            return;
+        }
+
+        try {
+            // Get public URL for streaming
+            const { data } = supabase.storage
+                .from('shared-sounds')
+                .getPublicUrl(sound.file_path);
+
+            if (!data?.publicUrl) {
+                throw new Error('Could not get public URL');
+            }
+
+            const audio = new Audio(data.publicUrl);
+            audio.onended = () => {
+                setPlayingId(null);
+                audioRef.current = null;
+            };
+            audio.onerror = () => {
+                console.error('Audio playback error');
+                setPlayingId(null);
+                audioRef.current = null;
+            };
+
+            audioRef.current = audio;
+            await audio.play();
+            setPlayingId(sound.id);
+        } catch (err) {
+            console.error('Preview error:', err);
+            alert('Failed to preview sound');
         }
     };
 
@@ -80,12 +136,43 @@ export function CommunityLibrary({ onBack }) {
         }
     };
 
+    const handleDeleteShared = async (sound) => {
+        try {
+            // Delete from storage
+            const { error: storageError } = await supabase.storage
+                .from('shared-sounds')
+                .remove([sound.file_path]);
+
+            if (storageError) {
+                console.warn('Storage delete warning:', storageError);
+                // Continue anyway - file might already be gone
+            }
+
+            // Delete from database
+            const { error: dbError } = await supabase
+                .from('shared_sounds')
+                .delete()
+                .eq('id', sound.id);
+
+            if (dbError) throw dbError;
+
+            // Refresh list
+            loadSounds();
+            setDeleteConfirm(null);
+        } catch (err) {
+            console.error('Delete error:', err);
+            alert('Failed to delete sound: ' + err.message);
+        }
+    };
+
     const filteredSounds = searchQuery
         ? sounds.filter(s =>
             s.profiles?.username?.toLowerCase().includes(searchQuery.toLowerCase()) ||
             s.name.toLowerCase().includes(searchQuery.toLowerCase())
         )
         : sounds;
+
+    const isOwner = (sound) => user && sound.user_id === user.id;
 
     return (
         <div className="flex flex-col h-full bg-background-dark">
@@ -156,7 +243,10 @@ export function CommunityLibrary({ onBack }) {
                 ) : (
                     <div className="space-y-2">
                         {filteredSounds.map(sound => (
-                            <div key={sound.id} className="bg-surface-dark rounded-xl p-4 border border-slate-800 hover:border-slate-700 transition-colors">
+                            <div key={sound.id} className={clsx(
+                                "bg-surface-dark rounded-xl p-4 border transition-colors",
+                                isOwner(sound) ? "border-primary/30" : "border-slate-800 hover:border-slate-700"
+                            )}>
                                 <div className="flex items-start gap-3">
                                     <div
                                         className="size-12 rounded-lg shrink-0 flex items-center justify-center text-white"
@@ -168,7 +258,12 @@ export function CommunityLibrary({ onBack }) {
                                     </div>
 
                                     <div className="flex-1 min-w-0">
-                                        <h4 className="text-white font-bold text-sm truncate">{sound.name}</h4>
+                                        <div className="flex items-center gap-2">
+                                            <h4 className="text-white font-bold text-sm truncate">{sound.name}</h4>
+                                            {isOwner(sound) && (
+                                                <span className="text-[10px] bg-primary/20 text-primary px-1.5 py-0.5 rounded">You</span>
+                                            )}
+                                        </div>
                                         <p className="text-slate-400 text-xs mt-0.5">
                                             by {sound.profiles?.username || 'Unknown'}
                                         </p>
@@ -183,18 +278,58 @@ export function CommunityLibrary({ onBack }) {
                                         </div>
                                     </div>
 
-                                    <button
-                                        onClick={() => handleDownload(sound)}
-                                        className="shrink-0 size-10 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center text-white transition-colors active:scale-95"
-                                    >
-                                        <span className="material-symbols-outlined text-xl">download</span>
-                                    </button>
+                                    <div className="flex items-center gap-2 shrink-0">
+                                        {/* Preview/Play Button */}
+                                        <button
+                                            onClick={() => handlePreview(sound)}
+                                            className={clsx(
+                                                "size-10 rounded-full flex items-center justify-center transition-colors active:scale-95",
+                                                playingId === sound.id
+                                                    ? "bg-red-500 hover:bg-red-600 text-white"
+                                                    : "bg-slate-700 hover:bg-slate-600 text-white"
+                                            )}
+                                        >
+                                            <span className="material-symbols-outlined text-xl">
+                                                {playingId === sound.id ? 'stop' : 'play_arrow'}
+                                            </span>
+                                        </button>
+
+                                        {/* Download Button */}
+                                        <button
+                                            onClick={() => handleDownload(sound)}
+                                            className="size-10 rounded-full bg-primary hover:bg-primary/90 flex items-center justify-center text-white transition-colors active:scale-95"
+                                        >
+                                            <span className="material-symbols-outlined text-xl">download</span>
+                                        </button>
+
+                                        {/* Owner Actions */}
+                                        {isOwner(sound) && (
+                                            <button
+                                                onClick={() => setDeleteConfirm(sound)}
+                                                className="size-10 rounded-full bg-red-500/20 hover:bg-red-500/40 flex items-center justify-center text-red-500 transition-colors active:scale-95"
+                                            >
+                                                <span className="material-symbols-outlined text-xl">delete</span>
+                                            </button>
+                                        )}
+                                    </div>
                                 </div>
                             </div>
                         ))}
                     </div>
                 )}
             </div>
+
+            {/* Delete Confirmation Dialog */}
+            {deleteConfirm && (
+                <ConfirmDialog
+                    title="Delete from Community?"
+                    message={`Are you sure you want to remove "${deleteConfirm.name}" from the community library? This cannot be undone.`}
+                    confirmText="Delete"
+                    cancelText="Cancel"
+                    onConfirm={() => handleDeleteShared(deleteConfirm)}
+                    onCancel={() => setDeleteConfirm(null)}
+                />
+            )}
         </div>
     );
 }

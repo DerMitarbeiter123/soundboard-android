@@ -82,8 +82,8 @@ export function SoundCard({ sound, isPlaying, isEditing, onClick, onDelete, onSh
 
                 <div className="flex-1 flex items-center justify-center">
                     <span
-                        className={clsx("material-symbols-outlined text-5xl transition-colors", isPlaying ? "text-primary" : "text-slate-500 group-hover:text-white")}
-                        style={{ color: isPlaying ? borderColor : undefined }}
+                        className="material-symbols-outlined text-5xl transition-colors"
+                        style={{ color: borderColor }}
                     >
                         {iconName}
                     </span>

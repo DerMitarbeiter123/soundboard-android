@@ -12,7 +12,23 @@ const COLORS = [
     '#8b5cf6', // Purple
 ];
 
-const ICONS = ['campaign', 'mic', 'notifications', 'warning', 'rocket_launch', 'favorite', 'bolt', 'celebration', 'pets', 'more_horiz'];
+const ICONS = [
+    // Original icons
+    'campaign', 'mic', 'notifications', 'warning', 'rocket_launch',
+    'favorite', 'bolt', 'celebration', 'pets',
+    // Music & Audio
+    'music_note', 'album', 'headphones', 'speaker', 'radio',
+    'piano', 'audiotrack', 'graphic_eq', 'equalizer', 'volume_up',
+    // Voice & Sound
+    'record_voice_over', 'spatial_audio', 'surround_sound', 'queue_music',
+    // Fun & Games
+    'sports_esports', 'videogame_asset', 'smart_toy', 'mood', 'sentiment_very_satisfied',
+    // Nature
+    'nature', 'forest', 'water_drop', 'thunderstorm', 'air',
+    // Misc
+    'star', 'auto_awesome', 'flare', 'whatshot', 'eco',
+    'more_horiz'  // Keep last for expansion
+];
 
 export function AddSoundModal({ onClose, onSave }) {
     const [mode, setMode] = useState('record'); // 'record' | 'import'
@@ -197,7 +213,7 @@ export function AddSoundModal({ onClose, onSave }) {
 
                         <div>
                             <label className="block text-slate-400 text-xs font-bold mb-2 ml-1">Icon</label>
-                            <div className="grid grid-cols-5 gap-2">
+                            <div className="grid grid-cols-6 gap-2 max-h-40 overflow-y-auto p-1">
                                 {ICONS.map(ic => (
                                     <button
                                         key={ic}

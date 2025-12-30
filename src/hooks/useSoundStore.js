@@ -5,7 +5,7 @@ const STORAGE_KEY = 'soundboard_layout_v2';
 const SETTINGS_KEY = 'soundboard_settings_v1';
 
 const DEFAULT_SETTINGS = {
-  masterVolume: 80,
+  masterVolume: 100,
   stopOnTap: true,
   allowOverlap: false,
   loopDefault: false,

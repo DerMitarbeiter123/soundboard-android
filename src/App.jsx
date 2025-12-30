@@ -11,6 +11,7 @@ import { LibraryView } from './components/LibraryView';
 import { ProfileScreen } from './components/ProfileScreen';
 import { CommunityLibrary } from './components/CommunityLibrary';
 import { MiniPlayer } from './components/MiniPlayer';
+import { EditSoundModal } from './components/EditSoundModal';
 import clsx from 'clsx';
 import './components/Animations.css';
 
@@ -71,11 +72,12 @@ function UpdatePrompt({ onUpdate, onClose }) {
 function App() {
   const { needRefresh, updateApp, closePrompt } = useServiceWorker();
   const { user, loading: userLoading } = useUser();
-  const { sounds, settings, addSound, deleteSound, getAudioBlob } = useSoundStore();
+  const { sounds, settings, addSound, deleteSound, updateSound, getAudioBlob } = useSoundStore();
   const { playBlob, stopAll, playingId, initContext } = useAudio();
 
   const [currentView, setCurrentView] = useState('board'); // 'board' | 'settings' | 'library' | 'community' | 'profile'
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [editingSound, setEditingSound] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [toast, setToast] = useState(null);
 
@@ -186,8 +188,12 @@ function App() {
   };
 
   const handleEditSound = (sound) => {
-    // TODO: Open edit modal
-    showToast('Edit feature coming soon!', 'info');
+    setEditingSound(sound);
+  };
+
+  const handleSaveEdit = (id, changes) => {
+    updateSound(id, changes);
+    showToast('Sound updated!', 'info');
   };
 
   const handleDeleteSound = async (id) => {
@@ -201,6 +207,10 @@ function App() {
   };
 
   const favorites = sounds.filter(s => s.isFavorite);
+
+  // Dynamic grid columns based on button size setting
+  const gridClass = settings.buttonSize === 'small' ? 'grid-cols-3' :
+    settings.buttonSize === 'large' ? 'grid-cols-1' : 'grid-cols-2';
 
   const renderContent = () => {
     if (currentView === 'settings') {
@@ -224,7 +234,7 @@ function App() {
             <div className="flex items-center justify-between mb-3 px-1 mt-2">
               <span className="text-xs font-semibold uppercase tracking-wider text-primary">Favorites</span>
             </div>
-            <div className="grid grid-cols-2 gap-3">
+            <div className={clsx("grid gap-3", gridClass)}>
               {favorites.map(sound => (
                 <SoundCard
                   key={sound.id}
@@ -246,7 +256,7 @@ function App() {
           {sounds.length > 8 && <span className="text-xs text-primary cursor-pointer" onClick={() => setCurrentView('library')}>View all</span>}
         </div>
 
-        <div className="grid grid-cols-2 gap-3 pb-4">
+        <div className={clsx("grid gap-3 pb-4", gridClass)}>
           {sounds.map(sound => (
             <SoundCard
               key={sound.id}
@@ -363,6 +373,14 @@ function App() {
 
       {isAddModalOpen && (
         <AddSoundModal onClose={() => setIsAddModalOpen(false)} onSave={handleSaveNewSound} />
+      )}
+
+      {editingSound && (
+        <EditSoundModal
+          sound={editingSound}
+          onClose={() => setEditingSound(null)}
+          onSave={handleSaveEdit}
+        />
       )}
 
     </div>
